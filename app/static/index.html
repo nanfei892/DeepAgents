@@ -1,10 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<!-- lang 属性帮助浏览器、输入法和无障碍工具识别中文页面。 -->
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>企业智能客服</title>
+  <style>
+    /* 教学版不引入前端框架，重点放在 SSE 协议处理。 */
+    body { font-family: system-ui, sans-serif; max-width: 850px; margin: 32px auto; }
+    .box { border: 1px solid #ddd; padding: 16px; margin: 12px 0; border-radius: 8px; }
+    input, button { padding: 8px; }
+    pre { white-space: pre-wrap; }
+    .warn { color: #b45309; }
+  </style>
 </head>
 <body>
+<h1>企业级多 Agent 智能客服</h1>
+<p>演示用户：<code>u_zhang</code>；可问“CS20260002 的物流到哪里了？”或“我要退款”。</p>
+<div class="box">
+  <!-- 输入框与发送按钮；真实项目应从登录态获取用户 ID。 -->
+  <input id="q" size="55" placeholder="输入问题">
+  <button id="send-button">发送</button>
+</div>
+<div id="out" class="box"></div>
+<div id="sources" class="box">来源会显示在这里</div>
+<script>
+// session_id 保存在浏览器本地：刷新页面后仍能命中同一条 LangGraph Checkpoint。
+const sessionId = localStorage.sessionId || (localStorage.sessionId = crypto.randomUUID());
+const output = document.querySelector('#out');
+const sources = document.querySelector('#sources');
+const input = document.querySelector('#q');
+const sendButton = document.querySelector('#send-button');
 
-</body>
-</html>
+// textContent 而不是 innerHTML：模型输出不能被当作 HTML 执行，避免 XSS。
+function addMessage(text, cssClass = '') {
+  const element = document.createElement('pre');
+  element.className = cssClass;
+  element.textContent = text;
+  output.append(element);
+}
+
+async function send(){
+  const question = input.value.trim();
+  if (!question) return;
+
+  addMessage('我：' + question);
+  input.value = '';
+  sendButton.disabled = true;
+  sources.textContent = '来源：\n';
+
+  try {
+    // EventSource 只能发送 GET；POST SSE 必须用 fetch + ReadableStream 手动读取。
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-User-Id': 'u_zhang' },
+      body: JSON.stringify({
+        question,
+        session_id: sessionId,
+        // 每次用户点击使用新键；网络重试应复用同一个键。
+        idempotency_key: crypto.randomUUID(),
+      }),
+    });
+    if (!response.ok || !response.body) {
+      throw new Error('请求失败：' + response.status);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // 网络 chunk 不等于完整 SSE 帧，所以先累积到 buffer。
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop(); // 保留不完整帧，等待下一次网络数据。
+
+      for (const frame of frames) {
+        if (!frame.startsWith('data: ')) continue;
+        const event = JSON.parse(frame.slice(6));
+        if (event.type === 'token') addMessage('客服：' + event.content);
+        if (event.type === 'delegation') addMessage(event.message);
+        if (event.type === 'source') sources.textContent += event.data.source + '\n';
+        if (event.type === 'handoff' || event.type === 'approval_required') {
+          addMessage('人工兜底：' + (event.reason || event.message) + '，工单：' + event.ticket_id, 'warn');
+        }
+        if (event.type === 'error') addMessage(event.message, 'warn');
+      }
+    }
+  } catch (error) {
+    addMessage('连接错误：' + error.message, 'warn');
+  } finally {
+    // 无论成功、异常还是网络中断，都恢复发送按钮。
+    sendButton.disabled = false;
+    input.focus();
+  }
+}
+
+sendButton.addEventListener('click', send);
+input.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') send();
+});
+</script></body></html>
