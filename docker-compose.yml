@@ -1,0 +1,45 @@
+services:
+  postgres:
+    # alpine 镜像较小，适合本地学习；生产应固定镜像 digest。
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: customer
+      POSTGRES_PASSWORD: customer
+      POSTGRES_DB: customer_service
+    # 左边是 Windows 宿主机端口，右边是容器内部 PostgreSQL 端口。
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U customer -d customer_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    # Dockerfile 构建 API 镜像；代码目录挂载便于本地热更新。
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://customer:customer@postgres:5432/customer_service
+      REDIS_URL: redis://redis:6379/0
+    ports: ["8080:8080"]
+    volumes:
+      - ./app:/workspace/app
+      # 向量库放命名卷，容器重建后仍保留索引。
+      - chroma_data:/workspace/chroma_db
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  postgres_data:
+  chroma_data:
