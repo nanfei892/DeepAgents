@@ -25,7 +25,7 @@ def wait_for_human(state: ApprovalState) -> dict:
 
 def compose_final_reply(state: ApprovalState) -> dict:
     # 人工 edit 的文本优先级最高，不能由模型二次改写。
-    if state["decision"] == "approval":
+    if state["decision"] == "approve":
         return {"final_reply": "人工客服已批准您的售后申请，后续进度会通过工单同步。"}
     if state["decision"] == "edit":
         return {"final_reply": state["human_reply"]}

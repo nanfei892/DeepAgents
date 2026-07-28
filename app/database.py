@@ -29,5 +29,5 @@ async def init_db() -> None:
     """学习环境快速建表，生产环境改为 Alembic migration。"""
     # run_async 把同步 metadata API 安全地桥接到异步连接。
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all())
+        await conn.run_sync(Base.metadata.create_all)
 

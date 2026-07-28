@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     app.state.checkpointer = await checkpoint_cm.__aenter__()
     await app.state.checkpointer.setup()
     app.state.customer_service = CustomerService(rag, app.state.checkpointer)
-    app.state.redis = Redis.from_url(settings.redis_url, decode_response = True)
+    app.state.redis = Redis.from_url(settings.redis_url, decode_responses = True)
     try:
         yield
     finally:

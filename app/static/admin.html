@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>智服中台 - 管理员审批</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --ink: #17212b;
+            --muted: #657382;
+            --line: #dce5e8;
+            --canvas: #f5f8f7;
+            --surface: #fff;
+            --teal: #087f78;
+            --teal-dark: #05665f;
+            --teal-soft: #e3f4f1;
+            --orange: #c45318;
+            --orange-soft: #fff0e8;
+            --red: #b42318;
+            --red-soft: #fff0ef;
+            --shadow: 0 10px 30px rgba(23, 33, 43, .08);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--canvas);
+            color: var(--ink);
+            font: 15px/1.5 Inter, "Microsoft YaHei", system-ui, sans-serif
+        }
+
+        button, input, textarea {
+            font: inherit
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
+            outline: 3px solid rgba(8, 127, 120, .32);
+            outline-offset: 2px
+        }
+
+        .topbar {
+            height: 68px;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 max(24px, calc((100% - 1240px) / 2))
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--ink);
+            font-weight: 800;
+            font-size: 18px;
+            text-decoration: none
+        }
+
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: var(--teal);
+            color: #fff
+        }
+
+        .brand-mark svg {
+            width: 20px
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px
+        }
+
+        .nav a {
+            color: var(--muted);
+            text-decoration: none;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-weight: 650
+        }
+
+        .nav a[aria-current="page"] {
+            background: var(--teal-soft);
+            color: var(--teal-dark)
+        }
+
+        main {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 32px 24px 48px
+        }
+
+        .heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 20px;
+            margin-bottom: 24px
+        }
+
+        h1 {
+            font-size: 28px;
+            line-height: 1.2;
+            margin: 0
+        }
+
+        .heading p {
+            margin: 7px 0 0;
+            color: var(--muted)
+        }
+
+        .key-box {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .key-box label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted)
+        }
+
+        .key-box input {
+            width: 200px;
+            height: 40px;
+            border: 1px solid #b8c7ca;
+            border-radius: 6px;
+            padding: 0 10px
+        }
+
+        .btn {
+            height: 40px;
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 6px;
+            padding: 0 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            font-weight: 750;
+            color: var(--ink)
+        }
+
+        .btn svg {
+            width: 16px
+        }
+
+        .btn:hover {
+            background: #f3f7f7
+        }
+
+        .btn.primary {
+            border-color: var(--teal);
+            background: var(--teal);
+            color: #fff
+        }
+
+        .btn.primary:hover {
+            background: var(--teal-dark)
+        }
+
+        .btn.danger {
+            color: var(--red);
+            border-color: #efb7b2
+        }
+
+        .btn.danger:hover {
+            background: var(--red-soft)
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns:minmax(0, 1.2fr) minmax(340px, .8fr);
+            gap: 20px
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden
+        }
+
+        .panel-header {
+            padding: 17px 18px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 16px
+        }
+
+        .count {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--orange-soft);
+            color: #a63f0d;
+            font-size: 12px;
+            font-weight: 800
+        }
+
+        .table-wrap {
+            overflow: auto
+        }
+
+        .tickets {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .tickets th, .tickets td {
+            text-align: left;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top
+        }
+
+        .tickets th {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap
+        }
+
+        .tickets td {
+            font-size: 14px
+        }
+
+        .tickets tr {
+            cursor: pointer
+        }
+
+        .tickets tbody tr:hover, .tickets tbody tr.selected {
+            background: #f0f8f7
+        }
+
+        .ticket-id {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: var(--orange-soft);
+            color: #a63f0d;
+            font-size: 12px;
+            font-weight: 750
+        }
+
+        .badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor
+        }
+
+        .empty {
+            padding: 42px 20px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        .detail {
+            min-height: 500px
+        }
+
+        .detail-body {
+            padding: 20px;
+            display: grid;
+            gap: 18px
+        }
+
+        .detail-empty {
+            margin: auto;
+            padding: 92px 20px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        .detail-empty i {
+            display: grid;
+            place-items: center;
+            width: 46px;
+            height: 46px;
+            margin: 0 auto 12px;
+            color: var(--teal);
+            background: var(--teal-soft);
+            border-radius: 50%
+        }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+            margin-bottom: 6px
+        }
+
+        .value {
+            padding: 10px 11px;
+            background: #f6f9f9;
+            border-radius: 6px;
+            word-break: break-word
+        }
+
+        .field textarea {
+            display: block;
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+            border: 1px solid #b8c7ca;
+            border-radius: 6px;
+            padding: 10px
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 2px
+        }
+
+        .notice {
+            display: none;
+            margin: 0 0 16px;
+            padding: 10px 12px;
+            border-left: 3px solid var(--red);
+            background: var(--red-soft);
+            color: var(--red);
+            border-radius: 4px
+        }
+
+        .notice.show {
+            display: block
+        }
+
+        @media (max-width: 900px) {
+            .topbar {
+                padding: 0 16px
+            }
+
+            main {
+                padding: 24px 16px
+            }
+
+            .heading {
+                align-items: start;
+                flex-direction: column
+            }
+
+            .workspace {
+                grid-template-columns:1fr
+            }
+
+            .key-box {
+                width: 100%
+            }
+
+            .key-box input {
+                flex: 1
+            }
+        }
+
+        @media (max-width: 560px) {
+            .brand {
+                font-size: 16px
+            }
+
+            .nav a {
+                padding: 8px;
+                font-size: 13px
+            }
+
+            .key-box {
+                display: grid;
+                grid-template-columns:1fr auto
+            }
+
+            .key-box label {
+                grid-column: 1/-1
+            }
+
+            .tickets th:nth-child(2), .tickets td:nth-child(2) {
+                display: none
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark"><i data-lucide="bot"></i></span>智服中台</a>
+    <nav class="nav" aria-label="主导航"><a href="/">客户服务</a><a href="/admin.html"
+                                                                    aria-current="page">管理员审批</a></nav>
+</header>
+<main>
+    <section class="heading">
+        <div><h1>人工审批工作台</h1>
+            <p>审核退款、投诉和低置信度请求。审批结果将通过 `Command(resume=...)` 恢复原会话。</p></div>
+        <div class="key-box"><label for="admin-key">管理员密钥</label><input id="admin-key" type="password"
+                                                                             autocomplete="off"
+                                                                             placeholder="输入 ADMIN_API_KEY">
+            <button id="reload" class="btn primary" type="button"><i data-lucide="refresh-cw"></i>刷新待办</button>
+        </div>
+    </section>
+    <p id="notice" class="notice" role="alert"></p>
+    <div class="workspace">
+        <section class="panel">
+            <div class="panel-header"><h2>待处理工单</h2><span id="count" class="count">0</span></div>
+            <div class="table-wrap">
+                <table class="tickets">
+                    <thead>
+                    <tr>
+                        <th>工单</th>
+                        <th>用户</th>
+                        <th>类型</th>
+                        <th>请求原因</th>
+                        <th>状态</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ticket-list"></tbody>
+                </table>
+                <div id="list-empty" class="empty">输入管理员密钥后，点击“刷新待办”加载工单。</div>
+            </div>
+        </section>
+        <aside class="panel detail">
+            <div class="panel-header"><h2>审批详情</h2></div>
+            <div id="detail-empty" class="detail-empty"><i data-lucide="clipboard-check"></i>
+                <p>从左侧选择一张待处理工单。</p></div>
+            <form id="decision-form" class="detail-body" hidden>
+                <div class="field"><label>工单 ID</label>
+                    <div id="ticket-id" class="value ticket-id"></div>
+                </div>
+                <div class="field"><label>用户与类型</label>
+                    <div id="ticket-summary" class="value"></div>
+                </div>
+                <div class="field"><label>用户请求</label>
+                    <div id="ticket-reason" class="value"></div>
+                </div>
+                <div class="field"><label for="human-reply">人工回复（仅“编辑回复”必填）</label><textarea id="human-reply"
+                                                                                                        placeholder="输入发送给用户的最终回复"></textarea>
+                </div>
+                <div class="actions">
+                    <button class="btn primary" type="button" data-decision="approve"><i data-lucide="check"></i>批准
+                    </button>
+                    <button class="btn danger" type="button" data-decision="reject"><i data-lucide="x"></i>拒绝</button>
+                    <button class="btn" type="button" data-decision="edit"><i data-lucide="pencil"></i>发送人工回复
+                    </button>
+                </div>
+            </form>
+        </aside>
+    </div>
+</main>
+<script>
+    const keyInput = document.querySelector('#admin-key');
+    const list = document.querySelector('#ticket-list');
+    const count = document.querySelector('#count');
+    const notice = document.querySelector('#notice');
+    const listEmpty = document.querySelector('#list-empty');
+    const detailEmpty = document.querySelector('#detail-empty');
+    const form = document.querySelector('#decision-form');
+    let tickets = [];
+    let selected = null;
+    keyInput.value = sessionStorage.adminApiKey || '';
+
+    function showNotice(message = '') {
+        notice.textContent = message;
+        notice.classList.toggle('show', Boolean(message));
+    }
+
+    function headers() {
+        return {'X-Admin-Key': keyInput.value.trim(), 'Content-Type': 'application/json'};
+    }
+
+    function esc(value) {
+        const node = document.createElement('span');
+        node.textContent = value ?? '';
+        return node.innerHTML;
+    }
+
+    async function loadTickets() {
+        const key = keyInput.value.trim();
+        if (!key) return showNotice('请先输入 .env 中配置的 ADMIN_API_KEY。');
+        sessionStorage.adminApiKey = key;
+        showNotice('');
+        list.replaceChildren();
+        listEmpty.hidden = true;
+        try {
+            const response = await fetch('/api/admin/tickets', {headers: headers()});
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || `加载失败：${response.status}`);
+            tickets = data;
+            count.textContent = String(data.length);
+            if (!data.length) {
+                listEmpty.textContent = '当前没有待处理工单。';
+                listEmpty.hidden = false;
+                return;
+            }
+            data.forEach((ticket) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td><div class="ticket-id">${esc(ticket.id)}</div></td><td>${esc(ticket.user_id)}</td><td>${esc(ticket.category)}</td><td>${esc(ticket.reason)}</td><td><span class="badge">待审批</span></td>`;
+                row.addEventListener('click', () => selectTicket(ticket, row));
+                list.append(row);
+            });
+        } catch (error) {
+            count.textContent = '0';
+            listEmpty.textContent = '无法加载待办工单。';
+            listEmpty.hidden = false;
+            showNotice(error.message);
+        }
+    }
+
+    function selectTicket(ticket, row) {
+        selected = ticket;
+        document.querySelectorAll('#ticket-list tr').forEach((item) => item.classList.remove('selected'));
+        row.classList.add('selected');
+        detailEmpty.hidden = true;
+        form.hidden = false;
+        document.querySelector('#ticket-id').textContent = ticket.id;
+        document.querySelector('#ticket-summary').textContent = `${ticket.user_id} / ${ticket.category}`;
+        document.querySelector('#ticket-reason').textContent = ticket.reason;
+        document.querySelector('#human-reply').value = '';
+    }
+
+    async function decide(decision) {
+        if (!selected) return;
+        const humanReply = document.querySelector('#human-reply').value.trim();
+        if (decision === 'edit' && !humanReply) return showNotice('选择“发送人工回复”时必须填写人工回复。');
+        const action = {approve: '批准', reject: '拒绝', edit: '发送人工回复'}[decision];
+        if (!confirm(`确认${action}该工单？`)) return;
+        try {
+            const response = await fetch(`/api/admin/tickets/${selected.id}/decision`, {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify({decision, human_reply: humanReply || null})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || `审批失败：${response.status}`);
+            showNotice('');
+            selected = null;
+            form.hidden = true;
+            detailEmpty.hidden = false;
+            await loadTickets();
+        } catch (error) {
+            showNotice(error.message);
+        }
+    }
+
+    document.querySelector('#reload').addEventListener('click', loadTickets);
+    document.querySelectorAll('[data-decision]').forEach((button) => button.addEventListener('click', () => decide(button.dataset.decision)));
+    lucide.createIcons();
+</script>
+</body>
+</html>

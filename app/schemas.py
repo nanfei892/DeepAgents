@@ -23,10 +23,10 @@ class WorkerResult(BaseModel):
     confidence: float = Field(ge=0, le=1)
     risk_level: Literal["low", "medium", "high"]
     citations: list[dict] = Field(default_factory=list)    # 每个实例独立列表，不能写 []
-    action: Literal["answer", "refund_request", "created_ticket"] = "answer"
+    action: Literal["answer", "refund_request", "create_ticket"] = "answer"
     handoff_reason: str | None = None
 
 class DecisionRequest(BaseModel):
     # 管理员只能三选一；Pydantic 会拒绝未知的 decision
-    decision: Literal["approval", "reject", "edit"]
+    decision: Literal["approve", "reject", "edit"]
     human_reply: str | None = Field(default=None, max_length=1000)

@@ -20,7 +20,7 @@ def ensure_safe_input(text: str) -> None:
 
 async def get_user_id(x_user_id: str = Header(..., alias="X-User-Id")) -> str:
     # Header alias 让 HTTP 使用 X-User-Id，Python 使用下划线变量名
-    if not re.fullmatch(r"[a-zA-Z0-9_-]{3, 64}", x_user_id):
+    if not re.fullmatch(r"[a-zA-Z0-9_-]{3,64}", x_user_id):
         raise HTTPException(400, "X-User-Id 格式不合法")
     return x_user_id
 
